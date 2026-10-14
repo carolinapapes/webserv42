@@ -139,6 +139,7 @@ OBJ		:=	main.o						\
 			headers.o					\
 			req_scanner.o				\
 			request.o					\
+			request_parse_error.o		\
 			schemas.o					\
 										\
 			server.o					\

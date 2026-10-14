@@ -14,6 +14,7 @@
 #pragma once
 
 #include "request.hpp"
+#include "request_parse_error.hpp"
 
 // =====================================================================
 // 	Conditional Schemas flags
@@ -42,8 +43,7 @@ enum SchemaFlags {
 // =====================================================================
 struct SchemaItem {
     bool 			(*fn)(const std::string&);
-    const char* 	error;
-    int 			errorCode;
+    RequestParseError::Id error;
     int             flags; // Flags for optional spaces, allow empty, etc.
 };
 

@@ -14,14 +14,8 @@
 
 #include <stdexcept>
 #include <string>
-#include <cstdlib>   // for std::strtol
-#include <cerrno>    // for errno, ERANGE
-#include "uri.hpp"
-#include "authority.hpp"
 #include "headers.hpp"
 #include "request_parse_error.hpp"
-#include <iostream>
-#include <limits.h>
 
 
 // ABNF: https://datatracker.ietf.org/doc/html/rfc9110#section-9.3
@@ -30,15 +24,15 @@
 
 // start-line     = request-line
 // request-line   = method SP request-target SP HTTP-version CRLF
-// method         = "GET" | "POST"
+// method         = token (server support is checked separately)
 // request-target  = "*" | absolute-URI | authority | path-abempty
-// HTTP-version   = "HTTP" "/" 1*DIGIT "." 1*DIGIT
+// HTTP-version   = "HTTP" "/" DIGIT "." DIGIT
 
 
 // | **Failure**                           | **HTTP Status Code**                                             | **Reason Phrase**                    | **Explanation**                                 |
 // | ------------------------------------- | ---------------------------------------------------------------- | ------------------------------------ | ----------------------------------------------- |
 // | Missing or malformed request line     | `400 Bad Request`                                                | Bad Request                          | Server couldn't understand the request.         |
-// | Invalid HTTP method                   | `501 Not Implemented`                                            | Not Implemented                      | Method is unrecognized or unsupported.          |
+// | Unsupported HTTP method               | `501 Not Implemented`                                            | Not Implemented                      | A valid method token is not implemented.        |
 // | Invalid HTTP version                  | `505 HTTP Version Not Supported`
 
 // ABNF: https://datatracker.ietf.org/doc/html/rfc9110#section-9.3
@@ -46,7 +40,7 @@
 // Headers are key-value pairs that provide additional information about the request or response.
 // header-field   = field-name ":" OWS field-value OWS
 // field-name     = token
-// field-value    = *( field-content / obs-fold )
+// field-value    = *field-content (obsolete folding is rejected)
 // field-content  = field-vchar [ 1*( SP / HTAB ) field-vchar ]
 // field-vchar    = VCHAR / obs-text
 // obs-fold       = CRLF 1*( SP / HTAB )
@@ -62,9 +56,11 @@
 bool isValidKey(const std::string& key);
 bool isValidValue(const std::string& value);
 bool validMethod(const std::string& method);
+bool isSupportedMethod(const std::string& method);
 bool isValidRequest(const std::string& target);
+bool isValidProtocolSyntax(const std::string& version);
 bool isValidProtocol(const std::string& version);
-bool string_to_long(const std::string& s, size_t* pos, int base);
+bool parseContentLength(const std::string& value, size_t& length);
 bool isValidContentLength(const std::string& contentLength);
-void specificHeadersValidation(Headers& headers);
-void specificControlDataValidation(const std::string& target);
+void specificHeadersValidation(const Headers& headers);
+void specificControlDataValidation(const std::string& target, const std::string& method = "GET");

@@ -13,7 +13,8 @@
 #pragma once
 #include <map>
 #include <string>
-#include <stdexcept>
+#include <utility>
+#include <vector>
 
 class Headers {
 public:
@@ -23,12 +24,11 @@ public:
     Headers	&operator=(const Headers& other);
     ~Headers();
 
-    typedef std::map<std::string, std::string>::iterator iterator;
-    typedef std::map<std::string, std::string>::const_iterator const_iterator;
+    typedef std::vector<std::pair<std::string, std::string> > Fields;
+    typedef Fields::iterator iterator;
+    typedef Fields::const_iterator const_iterator;
 
-	bool operator==(const Headers& other) const {
-		return values == other.values;
-	}
+    bool operator==(const Headers& other) const;
 
     iterator begin();
     iterator end();
@@ -40,8 +40,9 @@ public:
 
     bool 				has(const std::string& key) const;
     const std::string&	get(const std::string& key) const;
+    std::vector<std::string> getAll(const std::string& key) const;
     std::string			&operator[](const std::string& key);
 
 private:
-    std::map<std::string, std::string> values;
+    Fields values;
 };

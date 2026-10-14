@@ -19,7 +19,7 @@ namespace
 // =====================================================================
 //  Flags utility functions
 // =====================================================================
-std::string remove_trailing(const std::string& str, const std::string& chars = SPACES)
+std::string remove_trailing(const std::string& str, const std::string& chars = " \t")
 {
     const size_t end = str.find_last_not_of(chars);
     if (end == std::string::npos)
@@ -27,7 +27,7 @@ std::string remove_trailing(const std::string& str, const std::string& chars = S
     return str.substr(0, end + 1);
 }
 
-std::string remove_leading(const std::string& str, const std::string& chars = SPACES)
+std::string remove_leading(const std::string& str, const std::string& chars = " \t")
 {
     const size_t start = str.find_first_not_of(chars);
     if (start == std::string::npos)
@@ -51,9 +51,9 @@ std::string validateField(const std::string& raw, const SchemaItem& item)
 {
     const std::string value = applyFlags(raw, item.flags);
     if ((item.flags & IS_REQUIRED) && value.empty())
-        throw RequestParseError(400, item.error);
+        throw RequestParseError(item.error);
     if (item.fn && !item.fn(value))
-        throw RequestParseError(item.errorCode, item.error);
+        throw RequestParseError(item.error);
     return value;
 }
 
@@ -62,7 +62,7 @@ bool readLine(ReqScanner& scanner, std::string& line, bool endOfInput)
     if (scanner.getField(END_OF_LINE, line))
     {
         if (line.find_first_of("\r\n") != std::string::npos)
-            throw RequestParseError(400, "Invalid line ending");
+            throw RequestParseError(RequestParseError::INVALID_LINE_ENDING);
         return true;
     }
 
@@ -72,9 +72,9 @@ bool readLine(ReqScanner& scanner, std::string& line, bool endOfInput)
     const size_t carriageReturn = remaining.find('\r');
     if (remaining.find('\n') != std::string::npos
         || (carriageReturn != std::string::npos && carriageReturn + 1 != remaining.size()))
-        throw RequestParseError(400, "Invalid line ending");
+        throw RequestParseError(RequestParseError::INVALID_LINE_ENDING);
     if (endOfInput)
-        throw RequestParseError(400, "Unexpected end of request headers");
+        throw RequestParseError(RequestParseError::UNEXPECTED_END_OF_HEADERS);
     return false;
 }
 
@@ -82,14 +82,14 @@ bool readLine(ReqScanner& scanner, std::string& line, bool endOfInput)
 // 	SCHEMAS
 // =====================================================================
 static const SchemaItem controlDataItems[] = {
-    { validMethod, "Invalid HTTP method", 501, IS_REQUIRED },
-    { isValidRequest, "Invalid request target", 400, IS_REQUIRED },
-    { isValidProtocol, "Invalid HTTP version", 505, IS_REQUIRED }
+    { validMethod, RequestParseError::INVALID_METHOD_SYNTAX, IS_REQUIRED },
+    { isValidRequest, RequestParseError::INVALID_REQUEST_TARGET, IS_REQUIRED },
+    { isValidProtocolSyntax, RequestParseError::INVALID_VERSION_SYNTAX, IS_REQUIRED }
 };
 
 static const SchemaItem headersItems[] = {
-    { isValidKey, "Invalid header key", 400, IS_REQUIRED },
-    { isValidValue, "Invalid header value", 400, IS_REQUIRED | OPTIONAL_SPACES }
+    { isValidKey, RequestParseError::INVALID_HEADER_KEY, IS_REQUIRED },
+    { isValidValue, RequestParseError::INVALID_HEADER_VALUE, OPTIONAL_SPACES }
 };
 
 // =====================================================================
@@ -106,22 +106,28 @@ ControlData validateControlData(const std::string& raw)
     std::string method;
     std::string target;
     if (!scanner.getField(SP, method) || !scanner.getField(SP, target))
-        throw RequestParseError(400, "Invalid request line");
+        throw RequestParseError(RequestParseError::INVALID_REQUEST_LINE);
 
     ControlData result;
     result.method = validateField(method, controlDataItems[0]);
     result.requestTarget = validateField(target, controlDataItems[1]);
     result.httpVersion = validateField(scanner.getRemaining(), controlDataItems[2]);
-    specificControlDataValidation(result.requestTarget);
+    if (!isValidProtocol(result.httpVersion))
+        throw RequestParseError(RequestParseError::UNSUPPORTED_VERSION);
+    specificControlDataValidation(result.requestTarget, result.method);
+    if (!isSupportedMethod(result.method))
+        throw RequestParseError(RequestParseError::UNSUPPORTED_METHOD);
     return result;
 }
 
 void validateHeader(const std::string& line, Headers& headers)
 {
+    if (line[0] == ' ' || line[0] == '\t')
+        throw RequestParseError(RequestParseError::OBSOLETE_HEADER_FOLDING);
     ReqScanner scanner(line);
     std::string key;
     if (!scanner.getField(":", key))
-        throw RequestParseError(400, "Missing header colon");
+        throw RequestParseError(RequestParseError::MISSING_HEADER_COLON);
     key = validateField(key, headersItems[0]);
     const std::string value = validateField(scanner.getRemaining(), headersItems[1]);
     headers.add(key, value);

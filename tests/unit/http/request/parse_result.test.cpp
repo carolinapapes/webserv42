@@ -143,6 +143,32 @@ static void independentResults(TestSuite& suite)
     checkRequest(suite, "repeated result", next.request, copied.request);
 }
 
+// =====================================================================
+// 	REQUEST PARSE ERROR TABLE
+// =====================================================================
+static void errorTable(TestSuite& suite)
+{
+    for (int i = 0; i < RequestParseError::COUNT; ++i)
+    {
+        const RequestParseError error(static_cast<RequestParseError::Id>(i));
+        suite.check(error.what()[0] != '\0', "each parse error ID has a message");
+        const int code = error.getErrorCode();
+        suite.check(code == 400 || code == 501 || code == 505,
+                    "each valid parse error ID has a defined HTTP status");
+    }
+    suite.checkEqual(RequestParseError(RequestParseError::MISSING_HOST).getErrorCode(), 400,
+                     "missing Host table status");
+    suite.checkEqual(RequestParseError(RequestParseError::UNSUPPORTED_METHOD).getErrorCode(), 501,
+                     "unsupported method table status");
+    suite.checkEqual(RequestParseError(RequestParseError::UNSUPPORTED_VERSION).getErrorCode(), 505,
+                     "unsupported version table status");
+    suite.checkEqual(std::string(RequestParseError(RequestParseError::MISSING_HOST).what()),
+                     std::string("Missing Host header"), "table preserves the missing Host message");
+    const RequestParseError unknown(RequestParseError::COUNT);
+    suite.checkEqual(unknown.getErrorCode(), 500, "unknown error ID has a defined fallback");
+    suite.check(unknown.what()[0] != '\0', "unknown error ID has a diagnostic");
+}
+
 int main()
 {
     TestSuite suite("HTTP parse results");
@@ -151,6 +177,7 @@ int main()
         incompleteInput(suite);
         malformedInput(suite);
         independentResults(suite);
+        errorTable(suite);
     }
     catch (const std::exception& error)
     {

@@ -50,9 +50,9 @@ changed or destroyed.
 An unfinished CRLF is INCOMPLETE unless `endOfInput` is true. A bare LF or a CR
 followed by another character is already invalid and reports 400. Missing
 components in a terminated request line and malformed headers also report 400.
-The existing validators continue to report unsupported methods as 501 and
-unsupported versions as 505. Header-policy and request-line validation changes
-belong to issue #4.
+Unsupported methods report 501 and unsupported versions report 505. Issue #4
+adds [header and request-line validation](http_header_validation.md), including
+400 for malformed method/version syntax and 505 for HTTP/2.0 request lines.
 
 The compatibility function `validateRequest(raw)` calls `parseRequest(raw, true)`
 and returns its Request. This preserves the whole-buffer interface used by the
@@ -98,7 +98,8 @@ end-of-input meaning.
 
 ## Explicit validator errors
 
-`RequestParseError` carries an HTTP code and a reason. Schema validation and the
+`RequestParseError` carries an HTTP code and a reason from the shared error table
+in `request_parse_error.cpp`. Schema validation and the
 URI, Host, and Content-Length validators throw it for detected failures. The
 parser catches this type and constructs an ERROR result. Missing Host now also
 reports 400 rather than throwing an untyped error while leaving Request code 0.
@@ -118,11 +119,11 @@ every truncation point of a valid request, explicit end-of-input handling,
 after previous errors or incomplete input.
 
 The existing known-bug suite remains enabled with unchanged expectations.
-Missing Host now passes; ten other reproductions still fail thirteen assertions.
-These cover header storage/validation and URI behavior assigned to later work.
-See [HTTP test notes](testing_http.md) for their expected and current results.
+Missing Host was fixed in issue #3; issue #4 resolves all ten remaining
+reproductions. See [HTTP test notes](testing_http.md) for expected and current
+results.
 
-## Docker validation for issue #3
+## Baseline Docker validation for issue #3
 
 Validated in the Ubuntu 24.04 Linux development image using
 `-Wall -Wextra -Werror -std=c++98`, AddressSanitizer, and
@@ -141,9 +142,10 @@ Validated in the Ubuntu 24.04 Linux development image using
 | `make test` | Fail: 10 of 11 C++ suites pass; known-bug suite has 13 failed assertions |
 
 The aliasing regression was observed failing before its fix and passes afterward.
-The missing-Host regression now passes with 400. The remaining ten known-bug
-reproductions retain their original desired expectations; full-suite acceptance
-is still unmet until later header/request-target validation work fixes them.
+The missing-Host regression passed with 400. At the issue #3 baseline, the other
+ten known-bug reproductions still failed with their original desired
+expectations. Those failures are resolved in issue #4; see its
+[current validation results](http_header_validation.md).
 No AddressSanitizer or LeakSanitizer diagnostics appeared. No required unit
 checks were blocked. Full server, epoll, and CGI integration tests were not run
 because those components are outside issue #3's scope.
