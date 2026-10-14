@@ -4,7 +4,9 @@ Issue [#2](https://github.com/carolinapapes/webserv42/issues/2) establishes test
 before changing the parser. The old `Test` and `UnitTestRunner` files were moved
 and consolidated during issue #1; the current tests live in
 `tests/unit/http/request/`. Issue #3 builds on these tests with safe extraction
-and [explicit parsing results](http_parser_results.md).
+and [explicit parsing results](http_parser_results.md). Issue #4 adds
+[header storage and HTTP validation](http_header_validation.md), resolving all
+the previously documented regression failures.
 
 ## Running in Linux
 
@@ -31,10 +33,10 @@ suite directory, paths containing spaces, signal termination, and continued
 execution after a failed suite. It uses only Python's standard library, zsh, and
 the compiled C++ assertion test. It should pass.
 
-`make test-http` builds and runs all five request suites, including known bugs.
+`make test-http` builds and runs all seven request suites, including known bugs.
 `make test-http-regressions` runs only the known-bug suite. `make test` runs all
-eleven C++ suites and the runner self-tests. These three targets currently return
-nonzero because known parser bugs are asserted as failures. A test executable
+thirteen C++ suites and the runner self-tests. The former known-bug suite now
+passes without changing any expected results. A test executable
 returns 1 on a failed assertion; the shell runner returns 1 if any suite fails;
 GNU Make returns 2 when a recipe fails. Do not interpret parser error messages
 alone as a test failure: malformed-input tests expect the parser to reject them.
@@ -45,6 +47,8 @@ To run the passing request/scanner suites after building:
 ./bin/tests/http/request/request.test.run
 ./bin/tests/http/request/req_scanner.test.run
 ./bin/tests/http/request/parse_result.test.run
+./bin/tests/http/request/headers.test.run
+./bin/tests/http/request/field_validation.test.run
 ```
 
 ## Coverage and fixture expectations
@@ -72,25 +76,26 @@ The C++ tests use checks that remain active with `NDEBUG`. The assertion suite
 deliberately changes each output field independently, while the Python tests
 launch those deliberate failures as subprocesses and require exit code 1.
 
-## Confirmed parser failures
+## Parser regressions from issues #2 and #3
 
 `known_bugs.test.cpp` contains desired assertions, without skipped tests or
-expected-failure conversion. Issue #3 fixes the missing-Host error-propagation
-case. The other ten reproductions still produce thirteen failing assertions:
+expected-failure conversion. Issue #3 fixes missing-Host error propagation;
+issue #4 resolves the remaining failures. All eleven reproductions and all
+32 checks now pass:
 
 | Reproduction | Expected | Current result |
 | --- | --- | --- |
 | No Host, with User-Agent present | 400 | 400; fixed in issue #3 |
-| Two Host fields | 400 | 0; last field overwrites first |
-| Content-Length fields of 3 and 4 | 400 | 0; last value wins |
-| `cOnTeNt-LeNgTh: nope` | 400 | 0; validation bypassed |
-| `/search?q=%GG` | 400 | 0; query escape not validated |
-| `GET / HTTP/1.1 extra` | 400 | 505 |
-| Lowercase `host` | Successful parse with header retained | 400; name lookup still case-sensitive |
-| Empty optional `X-Empty:` | Successful parse with header retained | 400 |
-| Valid field name `X!Trace` | Successful parse with header retained | 400 |
-| Numeric validator: `2147483648` | false under its existing INT_MAX bound | true |
-| Numeric validator: thirty nines | false on conversion overflow | true |
+| Two Host fields | 400 | 400 |
+| Content-Length fields of 3 and 4 | 400 | 400 |
+| `cOnTeNt-LeNgTh: nope` | 400 | 400 |
+| `/search?q=%GG` | 400 | 400 |
+| `GET / HTTP/1.1 extra` | 400 | 400 |
+| Lowercase `host` | Successful parse with header retained | Successful parse with header retained |
+| Empty optional `X-Empty:` | Successful parse with header retained | Successful parse with header retained |
+| Valid field name `X!Trace` | Successful parse with header retained | Successful parse with header retained |
+| Numeric validator: `2147483648` | false under its existing INT_MAX bound | false |
+| Numeric validator: thirty nines | false on conversion overflow | false |
 
 Missing/duplicate Host expectations follow
 [RFC 9112 §3.2](https://www.rfc-editor.org/rfc/rfc9112.html#section-3.2);
@@ -107,8 +112,8 @@ validator; INT_MAX is not an HTTP protocol limit. They call the validator direct
 to avoid representing a huge Content-Length as an otherwise valid request with
 an inconsistent body.
 
-These remaining failures belong to later parser work. Issues #2 and #3 do not
-implement HTTP body framing or change epoll, CGI, or routing. Full server/CGI
+Issues #2 through #4 do not implement HTTP body framing or change epoll, CGI,
+or routing. Full server/CGI
 integration and an exhaustive HTTP conformance suite are not part of these unit
 tests.
 
@@ -133,5 +138,5 @@ There were no AddressSanitizer or LeakSanitizer diagnostics. No required unit
 checks were blocked. Full server, epoll, and CGI integration tests were not run
 for this test-framework issue. These counts record the issue #2 baseline; see
 the [issue #3 API notes](http_parser_results.md) for its validation results.
-CI runs `make test` and will report the remaining parser regressions as failures
-until later parser work resolves them.
+Current results, including the resolved regressions, are recorded in the
+[issue #4 validation notes](http_header_validation.md).
