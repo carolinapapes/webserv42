@@ -1,3 +1,15 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#   .gitignore                                          :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#   By: capapes <capapes@student.42.fr>             +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#   Created: 2026/10/14 22:43:50 by capapes            #+#    #+#              #
+#   Updated: 2026/10/14 22:43:50 by capapes           ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
 # binaries
 
 webserv
@@ -7,7 +19,6 @@ a.out
 **/*.a
 **/*.d
 bin/
-test/
 
 # tmp files
 
@@ -15,5 +26,5 @@ test/
 .vscode/
 .DS_Store
 **/event.log
-src/connection_manager/connection_manager
+src/network/connection_manager
 

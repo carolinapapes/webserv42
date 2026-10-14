@@ -1,6 +1,23 @@
 #!/bin/zsh
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#   run_tests.sh                                        :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#   By: capapes <capapes@student.42.fr>             +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#   Created: 2026/10/14 22:43:50 by capapes            #+#    #+#              #
+#   Updated: 2026/10/14 22:43:50 by capapes           ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
 
-tests=($(find test -name "*.test.run" ))
+
+tests=($(find "${1:-bin/tests}" -name "*.test.run" ))
+
+if [ ${#tests} -eq 0 ]; then
+	echo 'no test executables found'
+	exit 1
+fi
 
 pids=()
 i=1

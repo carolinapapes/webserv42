@@ -1,0 +1,19 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#   Dockerfile.dev                                      :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#   By: capapes <capapes@student.42.fr>             +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#   Created: 2026/10/14 22:43:50 by capapes            #+#    #+#              #
+#   Updated: 2026/10/14 22:43:50 by capapes           ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+FROM ubuntu:24.04
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential zsh python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
