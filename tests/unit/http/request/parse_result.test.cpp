@@ -153,7 +153,8 @@ static void errorTable(TestSuite& suite)
         const RequestParseError error(static_cast<RequestParseError::Id>(i));
         suite.check(error.what()[0] != '\0', "each parse error ID has a message");
         const int code = error.getErrorCode();
-        suite.check(code == 400 || code == 501 || code == 505,
+        suite.check(code == 400 || code == 413 || code == 414 || code == 431
+                    || code == 501 || code == 505,
                     "each valid parse error ID has a defined HTTP status");
     }
     suite.checkEqual(RequestParseError(RequestParseError::MISSING_HOST).getErrorCode(), 400,

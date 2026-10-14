@@ -55,8 +55,8 @@ and optional decimal ports are checked before use. Ports must be nonempty when
 the colon is present and fit 0 through 65535. This avoids passing malformed
 authority input to the legacy URI constructors.
 
-The existing field-name/value bounds of 256 and 8192 bytes remain. Aggregate
-request and body limits belong to the incremental framing work in issue #5.
+The existing field-name/value bounds of 256 and 8192 bytes remain. Issue #5 adds
+[aggregate request and body limits](http_request_framing.md#resource-limits).
 
 ## Framing-header validation
 
@@ -79,10 +79,10 @@ must end in exactly one chunked coding. Duplicate or non-final chunked coding,
 chunked parameters, missing final chunked coding, and malformed lists produce
 400. Otherwise valid unsupported coding chains produce 501.
 
-This issue validates framing headers. It does not decode chunked data, enforce
-the received body length, split pipelined requests, or determine when fragmented
-bodies are complete. The current parser still returns the available body bytes;
-issue #5 supplies incremental framing and decoding.
+Issue #4 validates framing headers. Issue #5 supplies
+[incremental framing and decoding](http_request_framing.md), including exact body
+boundaries and pipelined input. A chunked body now contains decoded payload
+octets; a zero chunk with no data produces an empty body.
 
 ## Request-line validation
 
@@ -110,7 +110,8 @@ codes, and diagnostic messages. Schema definitions and validators refer to
 each failure site. The exception constructor resolves the ID through that table.
 Existing error messages and status codes are preserved. An unknown ID has a 500
 fallback diagnostic. Compilation checks the table's size, and tests verify that
-every declared error ID has a message and defined HTTP status.
+every declared error ID has a message and defined HTTP status. Issue #5 extends
+the same table with body-framing and resource-limit errors.
 
 ## References
 
@@ -128,7 +129,7 @@ The new header-storage and field-validation suites cover repeated fields,
 case-insensitive access, empty values, control bytes, Host syntax, numeric bounds,
 coding lists, method/version checks, and all request-target forms.
 
-## Docker validation for issue #4
+## Baseline Docker validation for issue #4
 
 Validated in the Ubuntu 24.04 Linux development image with
 `-Wall -Wextra -Werror -std=c++98`, AddressSanitizer, and leak detection enabled.

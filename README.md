@@ -107,15 +107,15 @@ make test
 ```
 
 Test sources and fixtures live under `tests/`. Generated test objects and
-executables live under `bin/tests/`. Thirteen C++ suites cover schemes, URI references,
+executables live under `bin/tests/`. Fourteen C++ suites cover schemes, URI references,
 paths, IP bytes, HTTP requests, request scanning, assertion checks, known parser
-regressions, parsing outcomes, header storage, field validation, keyword helpers,
-and listening sockets. `make test` also checks the test runner's exit codes using
-Python's standard library.
+regressions, parsing outcomes, header storage, field validation, incremental
+framing, keyword helpers, and listening sockets. `make test` also checks the test
+runner's exit codes using Python's standard library.
 
 The regressions introduced in issue #2 retain their original expectations and
 now pass after the scanner and header-validation fixes in issues #3 and #4.
-They remain included in `make test`. Run `make test-http` for the seven HTTP
+They remain included in `make test`. Run `make test-http` for the eight HTTP
 suites, `make test-http-regressions` for those regressions alone, or
 `make test-framework` to verify assertion and runner failure handling.
 See [HTTP test documentation](docs/testing_http.md) for coverage, commands, and
@@ -128,6 +128,9 @@ ownership, and the boundary with later body-framing work.
 Issue #4 adds case-insensitive lookup, preserved repeated fields, safe numeric
 validation, and HTTP request-line checks. See the
 [HTTP header API and validation policy](docs/http_header_validation.md).
+Issue #5 adds stateful input feeding, exact Content-Length framing, chunked
+decoding, pipelined input, and configurable limits. See the
+[incremental parser guide](docs/http_request_framing.md).
 
 Clean object files:
 

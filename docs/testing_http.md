@@ -33,9 +33,9 @@ suite directory, paths containing spaces, signal termination, and continued
 execution after a failed suite. It uses only Python's standard library, zsh, and
 the compiled C++ assertion test. It should pass.
 
-`make test-http` builds and runs all seven request suites, including known bugs.
+`make test-http` builds and runs all eight request suites, including known bugs.
 `make test-http-regressions` runs only the known-bug suite. `make test` runs all
-thirteen C++ suites and the runner self-tests. The former known-bug suite now
+fourteen C++ suites and the runner self-tests. The former known-bug suite now
 passes without changing any expected results. A test executable
 returns 1 on a failed assertion; the shell runner returns 1 if any suite fails;
 GNU Make returns 2 when a recipe fails. Do not interpret parser error messages
@@ -49,6 +49,7 @@ To run the passing request/scanner suites after building:
 ./bin/tests/http/request/parse_result.test.run
 ./bin/tests/http/request/headers.test.run
 ./bin/tests/http/request/field_validation.test.run
+./bin/tests/http/request/request_parser.test.run
 ```
 
 ## Coverage and fixture expectations
@@ -112,9 +113,15 @@ validator; INT_MAX is not an HTTP protocol limit. They call the validator direct
 to avoid representing a huge Content-Length as an otherwise valid request with
 an inconsistent body.
 
-Issues #2 through #4 do not implement HTTP body framing or change epoll, CGI,
-or routing. Full server/CGI
-integration and an exhaustive HTTP conformance suite are not part of these unit
+Issue #5 adds [incremental HTTP body framing](http_request_framing.md). Its suite
+covers every two-fragment split and bytewise delivery of fixed and chunked
+messages, pipelining, binary data, malformed chunks, trailers, explicit EOF,
+independent parser instances, and configured limits. The zero-chunk cases in
+the field-validation suite now expect an empty decoded body instead of chunk
+syntax; their header validation expectations are unchanged.
+
+These parser issues do not change epoll, CGI, or routing. Full server/CGI
+integration and an exhaustive HTTP conformance suite are not part of the unit
 tests.
 
 ## Baseline Docker validation for issue #2
@@ -139,4 +146,4 @@ checks were blocked. Full server, epoll, and CGI integration tests were not run
 for this test-framework issue. These counts record the issue #2 baseline; see
 the [issue #3 API notes](http_parser_results.md) for its validation results.
 Current results, including the resolved regressions, are recorded in the
-[issue #4 validation notes](http_header_validation.md).
+[issue #5 validation notes](http_request_framing.md#docker-validation-for-issue-5).

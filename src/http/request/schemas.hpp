@@ -61,8 +61,8 @@ struct RequestParseResult {
     int getErrorCode() const { return request.getErrorCode(); }
 };
 
-// A false endOfInput allows an unfinished request line or headers to be retried
-// with more bytes. Body framing is introduced separately in issue #5.
+// Parses the first framed request. Use RequestParser to retain partial state
+// and unconsumed bytes between calls. A final incomplete message reports 400.
 RequestParseResult parseRequest(const std::string& raw, bool endOfInput = false);
 
 // Compatibility entry point for callers supplying a final, whole buffer.

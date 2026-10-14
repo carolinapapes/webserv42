@@ -52,6 +52,16 @@ class RequestParseError : public std::runtime_error
             INVALID_HOST,
             AMBIGUOUS_FRAMING,
             INVALID_CONTENT_LENGTH,
+            UNEXPECTED_END_OF_BODY,
+            INVALID_CHUNK_SIZE,
+            INVALID_CHUNK_EXTENSION,
+            INVALID_CHUNK_DELIMITER,
+            FORBIDDEN_TRAILER,
+            REQUEST_LINE_TOO_LONG,
+            HEADERS_TOO_LARGE,
+            BODY_TOO_LARGE,
+            BUFFER_LIMIT_EXCEEDED,
+            CHUNK_METADATA_TOO_LARGE,
             COUNT
         };
 
