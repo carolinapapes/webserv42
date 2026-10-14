@@ -107,10 +107,19 @@ make test
 ```
 
 Test sources and fixtures live under `tests/`. Generated test objects and
-executables live under `bin/tests/`. Eight suites cover the original scheme test,
-URI references, paths, IP bytes, HTTP requests, request scanning, keyword helpers,
-and listening sockets. The old print-only examples and disabled request checks
-now run as assertions and return a failure status when a check fails.
+executables live under `bin/tests/`. Ten C++ suites cover schemes, URI references,
+paths, IP bytes, HTTP requests, request scanning, assertion checks, known parser
+bugs, keyword helpers, and listening sockets. `make test` also checks the test
+runner's exit codes using Python's standard library.
+
+For issue #2, the known-bug suite asserts the desired parser results and currently
+fails on eleven reproductions (thirteen assertions). It is included in
+`make test`, so the full target returns nonzero until those parser bugs are fixed.
+The existing valid scenarios and other suites pass. Run `make test-http` for the
+HTTP suites, `make test-http-regressions` for the known bugs alone, or
+`make test-framework` to verify assertion and runner failure handling.
+See [HTTP test documentation](docs/testing_http.md) for coverage, commands, and
+the expected and observed results of each known failure.
 
 Clean object files:
 

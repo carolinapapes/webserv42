@@ -13,6 +13,7 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 #include <string>
 
 class TestSuite
@@ -35,6 +36,18 @@ class TestSuite
                 std::cerr << _name << ": " << description << std::endl;
             }
         }
+
+        template <typename T>
+        void checkEqual(const T &actual, const T &expected,
+                        const std::string &description)
+        {
+            std::ostringstream message;
+            message << description << " (expected [" << expected
+                    << "], actual [" << actual << "])";
+            check(actual == expected, message.str());
+        }
+
+        size_t failureCount() const { return _failures; }
 
         int finish() const
         {

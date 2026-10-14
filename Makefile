@@ -152,6 +152,8 @@ TESTS_OBJ	:=	$(patsubst $(TEST_DIR)unit/%.cpp, $(TEST_BIN_DIR)%.o,$(TESTS_SRCS))
 
 TESTS		:=	$(patsubst $(TEST_DIR)unit/%.cpp, $(TEST_BIN_DIR)%.run,$(TESTS_SRCS))
 
+HTTP_TESTS	:=	$(filter $(TEST_BIN_DIR)http/request/%,$(TESTS))
+
 OBJ		:=	$(addprefix $(BIN_DIR), $(OBJ))
 
 DEP		:=	$(OBJ:.o=.d) $(TESTS_OBJ:.o=.d)
@@ -188,11 +190,17 @@ demo: all
 	./webserv ./config/demo.conf
 	
 
-test : all build_test
-	@echo //
-	@echo //	runing all the tests
-	@echo //
+test : all build_test test-framework
 	zsh run_tests.sh $(TEST_BIN_DIR)
+
+test-http: $(HTTP_TESTS) test-framework
+	zsh run_tests.sh $(TEST_BIN_DIR)http/request/
+
+test-http-regressions: $(TEST_BIN_DIR)http/request/known_bugs.test.run
+	./$(TEST_BIN_DIR)http/request/known_bugs.test.run
+
+test-framework: $(TEST_BIN_DIR)http/request/assertions.test.run
+	python3 $(TEST_DIR)test_runner.py
 
 build_test: $(TESTS)
 
@@ -203,4 +211,4 @@ run: demo
 
 .SECONDARY: $(TESTS_OBJ)
 
-.PHONY:	all clean fclean re demo test build_test run
+.PHONY:	all clean fclean re demo test build_test run test-http test-http-regressions test-framework
