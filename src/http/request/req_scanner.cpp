@@ -11,47 +11,39 @@
 /* ************************************************************************** */
 
 #include "req_scanner.hpp"
-#include "schemas.hpp"
-
-#define NOT_FOUND std::string::npos
+#include <stdexcept>
 
 ReqScanner::ReqScanner(const std::string& raw)
 	: _raw(raw), _pos(0)
 {
-	_size = _raw.size();
-	if (_size == 0)
-		_pos = NOT_FOUND;
 }
 
 ReqScanner::~ReqScanner() {}
 
-size_t ReqScanner::getEndPos(const std::string& delimiter)
+bool ReqScanner::isEndPos() const
 {
-	size_t res;
-
-	delimiter == EOF_
-		? res = _size
-		: res = _raw.find(delimiter, _pos);
-
-	return res;
+	return _pos == _raw.size();
 }
 
-inline bool ReqScanner::isEndPos()
+bool ReqScanner::getField(const std::string& delimiter, std::string& field)
 {
-	return (_pos == NOT_FOUND || _pos >= _size);
+	if (delimiter.empty())
+		throw std::invalid_argument("empty delimiter; use getRemaining()");
+	const size_t end = _raw.find(delimiter, _pos);
+	if (end == std::string::npos)
+	{
+		field.clear();
+		return false;
+	}
+	const size_t next = end + delimiter.size();
+	field = _raw.substr(_pos, end - _pos);
+	_pos = next;
+	return true;
 }
 
-std::string ReqScanner::getField(const std::string& delimiter)
+std::string ReqScanner::getRemaining()
 {
-	if (isEndPos())
-		return EMPTY_STRING;
-
-	size_t		start 	= _pos;
-	size_t		end		= getEndPos(delimiter);
-	std::string field 	= EMPTY_STRING;
-
-	if (end != NOT_FOUND && end != start)
-		field = _raw.substr(start, end - start);
-	_pos = end + delimiter.size();
-	return field;
+	const std::string remaining = _raw.substr(_pos);
+	_pos = _raw.size();
+	return remaining;
 }

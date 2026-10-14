@@ -87,6 +87,5 @@ struct RequestTestCase
         {
             suite.check(false, name + " unexpected non-standard exception");
         }
-        Request::setActiveRequest(NULL);
     }
 };

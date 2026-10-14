@@ -13,12 +13,7 @@
 
 #pragma once
 
-#include <iostream>
-#include <vector>
 #include "request.hpp"
-#include "headers.hpp"
-#include "control_data.hpp"
-#include "field_validators.hpp"
 
 // =====================================================================
 // 	Conditional Schemas flags
@@ -34,7 +29,6 @@ enum SchemaFlags {
 // =====================================================================
 // 	DELIMITERS DEFINITIONS
 // =====================================================================
-#define EOF_			"\0"
 #define SP				" "
 #define TB				"\t"
 #define END_OF_HEADERS 	"\r\n\r\n"
@@ -47,11 +41,29 @@ enum SchemaFlags {
 // 	SCHEMA DEFINITIONS
 // =====================================================================
 struct SchemaItem {
-    const char* 	delimiter;
     bool 			(*fn)(const std::string&);
     const char* 	error;
     int 			errorCode;
     int             flags; // Flags for optional spaces, allow empty, etc.
 };
 
+// =====================================================================
+// 	PARSING RESULTS
+// =====================================================================
+struct RequestParseResult {
+    enum Status { COMPLETE, INCOMPLETE, ERROR };
+
+    Status      status;
+    Request     request;
+    std::string message;
+
+    RequestParseResult() : status(INCOMPLETE) {}
+    int getErrorCode() const { return request.getErrorCode(); }
+};
+
+// A false endOfInput allows an unfinished request line or headers to be retried
+// with more bytes. Body framing is introduced separately in issue #5.
+RequestParseResult parseRequest(const std::string& raw, bool endOfInput = false);
+
+// Compatibility entry point for callers supplying a final, whole buffer.
 Request validateRequest(const std::string& raw);

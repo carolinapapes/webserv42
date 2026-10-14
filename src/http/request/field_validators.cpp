@@ -108,8 +108,7 @@ void specificControlDataValidation(const std::string& target)
 	}
 	catch (const std::exception& e)
 	{
-        Request::setActiveError(400);
-		throw std::runtime_error("Invalid URI");
+		throw RequestParseError(400, "Invalid URI");
 	}
 }
 
@@ -118,8 +117,7 @@ void specificHeadersValidation(Headers& headers)
 {
     if (headers.has("Content-Length") && !isValidContentLength(headers.get("Content-Length")))
     {
-        Request::setActiveError(400);
-        throw std::runtime_error("Invalid Content-Length header value");
+        throw RequestParseError(400, "Invalid Content-Length header value");
     }
 
     if (headers.has("Host"))
@@ -130,12 +128,11 @@ void specificHeadersValidation(Headers& headers)
         }
         catch (const std::exception& e)
         {
-			Request::setActiveError(400);
-            throw std::runtime_error("Invalid Host header value URI");
+            throw RequestParseError(400, "Invalid Host header value URI");
         }
     }
     else
     {
-        throw std::runtime_error("Missing Host or Content-Lenght header");
+        throw RequestParseError(400, "Missing Host header");
     }
 }

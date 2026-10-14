@@ -41,7 +41,6 @@ static Request changedRequest(const Request &expected, const std::string &field)
 int main(int argc, char **argv)
 {
     const Request expected = expectedRequest();
-    Request::setActiveRequest(NULL);
     // The runner self-test launches each deliberate failure as a subprocess.
     if (argc == 2)
     {

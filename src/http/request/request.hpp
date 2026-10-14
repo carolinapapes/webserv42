@@ -32,14 +32,10 @@ public:
     const Headers& 		getHeaders() 		const;
     const std::string& 	getBody() 			const;
     int 				getErrorCode() 		const;
-	static void 		setActiveRequest(Request* r);
-    static void 		setActiveError(int code);
 
 private:
     ControlData 		controlData;
     Headers 			headers;
     std::string 		body;
     int 				errorCode;
-
-	static Request* 	activeRequest;
 };

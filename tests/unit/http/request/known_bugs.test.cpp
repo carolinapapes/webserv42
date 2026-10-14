@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "../../../support/http_request_test.hpp"
+#include <field_validators.hpp>
 
 int main()
 {

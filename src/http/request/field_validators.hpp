@@ -18,7 +18,8 @@
 #include <cerrno>    // for errno, ERANGE
 #include "uri.hpp"
 #include "authority.hpp"
-#include "request.hpp"
+#include "headers.hpp"
+#include "request_parse_error.hpp"
 #include <iostream>
 #include <limits.h>
 

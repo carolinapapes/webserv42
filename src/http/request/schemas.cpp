@@ -14,12 +14,14 @@
 #include "schemas.hpp"
 #include "req_scanner.hpp"
 
+namespace
+{
 // =====================================================================
 //  Flags utility functions
 // =====================================================================
 std::string remove_trailing(const std::string& str, const std::string& chars = SPACES)
 {
-    size_t end = str.find_last_not_of(chars);
+    const size_t end = str.find_last_not_of(chars);
     if (end == std::string::npos)
         return "";
     return str.substr(0, end + 1);
@@ -27,72 +29,68 @@ std::string remove_trailing(const std::string& str, const std::string& chars = S
 
 std::string remove_leading(const std::string& str, const std::string& chars = SPACES)
 {
-    size_t start = str.find_first_not_of(chars);
-
+    const size_t start = str.find_first_not_of(chars);
     if (start == std::string::npos)
-		return ("");
-    return (str.substr(start));
+        return "";
+    return str.substr(start);
 }
 
 std::string applyFlags(std::string str, int flags)
 {
-	if (flags & LEADING)
-		str = remove_leading(str);
-	if (flags & TRAILING)
-		str = remove_trailing(str);
-	return str;
-}
-
-inline bool isRequired(int flags, const std::string& value)
-{
-    return (flags & IS_REQUIRED && value.empty());
+    if (flags & LEADING)
+        str = remove_leading(str);
+    if (flags & TRAILING)
+        str = remove_trailing(str);
+    return str;
 }
 
 // =====================================================================
 // 	Common schema functions
 // =====================================================================
-//  - if delimitator instance exist return substring, else empty string
-//  - check if its required and runs field validator callback fn
-//  - if not valid throws error and set error
-// =====================================================================
-
-std::string extractAndValidate(ReqScanner &scanner, const SchemaItem& item) {
-    std::string value = scanner.getField(item.delimiter);
-    value = applyFlags(value, item.flags);
-    if (isRequired(item.flags, value) || (item.fn && !item.fn(value)))
-    {
-        Request::setActiveError(item.errorCode);
-        throw std::runtime_error(item.error);
-    }
+std::string validateField(const std::string& raw, const SchemaItem& item)
+{
+    const std::string value = applyFlags(raw, item.flags);
+    if ((item.flags & IS_REQUIRED) && value.empty())
+        throw RequestParseError(400, item.error);
+    if (item.fn && !item.fn(value))
+        throw RequestParseError(item.errorCode, item.error);
     return value;
+}
+
+bool readLine(ReqScanner& scanner, std::string& line, bool endOfInput)
+{
+    if (scanner.getField(END_OF_LINE, line))
+    {
+        if (line.find_first_of("\r\n") != std::string::npos)
+            throw RequestParseError(400, "Invalid line ending");
+        return true;
+    }
+
+    // A final CR can be the start of a fragmented CRLF. Other embedded line
+    // endings cannot become valid by appending more input.
+    const std::string remaining = scanner.getRemaining();
+    const size_t carriageReturn = remaining.find('\r');
+    if (remaining.find('\n') != std::string::npos
+        || (carriageReturn != std::string::npos && carriageReturn + 1 != remaining.size()))
+        throw RequestParseError(400, "Invalid line ending");
+    if (endOfInput)
+        throw RequestParseError(400, "Unexpected end of request headers");
+    return false;
 }
 
 // =====================================================================
 // 	SCHEMAS
 // =====================================================================
-
-static SchemaItem controlDataItems[] = {
-    { SP, validMethod, "Invalid HTTP method", 501, IS_REQUIRED },
-    { SP, isValidRequest, "Invalid request target", 400, IS_REQUIRED },
-    { EOF_, isValidProtocol, "Invalid HTTP version", 505, IS_REQUIRED },
+static const SchemaItem controlDataItems[] = {
+    { validMethod, "Invalid HTTP method", 501, IS_REQUIRED },
+    { isValidRequest, "Invalid request target", 400, IS_REQUIRED },
+    { isValidProtocol, "Invalid HTTP version", 505, IS_REQUIRED }
 };
 
-static SchemaItem headersItems[] = {
-    { ":", isValidKey, "Invalid header key", 400, IS_REQUIRED },
-    { EOF_, isValidValue, "Invalid header value", 400, IS_REQUIRED | OPTIONAL_SPACES }
+static const SchemaItem headersItems[] = {
+    { isValidKey, "Invalid header key", 400, IS_REQUIRED },
+    { isValidValue, "Invalid header value", 400, IS_REQUIRED | OPTIONAL_SPACES }
 };
-
-static SchemaItem headersFields[] = {
-    { END_OF_LINE, NULL, "Invalid header", 400, IS_REQUIRED | TRAILING }
-};
-
-static SchemaItem requestItems[] = {
-    { END_OF_LINE, NULL, "Invalid request line", 400, IS_REQUIRED},
-    { END_OF_HEADERS, NULL, "Invalid request", 400, IS_REQUIRED },
-    { EOF_, NULL, "Invalid body", 400, NONE }
-};
-
-
 
 // =====================================================================
 // 	STRATEGY VALIDATORS
@@ -102,58 +100,72 @@ static SchemaItem requestItems[] = {
 //          |-> HeadersFields [Iterator] -> HeadersItems
 //          |-> Body
 // =====================================================================
-
-ControlData validateControlData(const std::string& raw) {
+ControlData validateControlData(const std::string& raw)
+{
     ReqScanner scanner(raw);
+    std::string method;
+    std::string target;
+    if (!scanner.getField(SP, method) || !scanner.getField(SP, target))
+        throw RequestParseError(400, "Invalid request line");
+
     ControlData result;
-
-    result.method        = extractAndValidate(scanner, controlDataItems[0]);
-    result.requestTarget = extractAndValidate(scanner, controlDataItems[1]);
-    result.httpVersion   = extractAndValidate(scanner, controlDataItems[2]);
-
+    result.method = validateField(method, controlDataItems[0]);
+    result.requestTarget = validateField(target, controlDataItems[1]);
+    result.httpVersion = validateField(scanner.getRemaining(), controlDataItems[2]);
     specificControlDataValidation(result.requestTarget);
     return result;
 }
 
-Headers validateHeaders(const std::string& raw) {
-    Headers     result;
-    ReqScanner  scanner(raw);
+void validateHeader(const std::string& line, Headers& headers)
+{
+    ReqScanner scanner(line);
+    std::string key;
+    if (!scanner.getField(":", key))
+        throw RequestParseError(400, "Missing header colon");
+    key = validateField(key, headersItems[0]);
+    const std::string value = validateField(scanner.getRemaining(), headersItems[1]);
+    headers.add(key, value);
+}
+}
 
-    while (!scanner.isEndPos())
+// =====================================================================
+// 	REQUEST PARSING
+// =====================================================================
+RequestParseResult parseRequest(const std::string& raw, bool endOfInput)
+{
+    RequestParseResult result;
+    ReqScanner scanner(raw);
+    try
     {
-        std::string field   = extractAndValidate(scanner, headersFields[0]);
+        std::string line;
+        if (!readLine(scanner, line, endOfInput))
+            return result;
+        result.request.setControlData(validateControlData(line));
 
-        ReqScanner  fieldScanner(field);
-        std::string key     = extractAndValidate(fieldScanner, headersItems[0]);
-        std::string value   = extractAndValidate(fieldScanner, headersItems[1]);
-        result.add(key, value);
-
+        Headers headers;
+        while (true)
+        {
+            if (!readLine(scanner, line, endOfInput))
+                return result;
+            if (line.empty())
+                break;
+            validateHeader(line, headers);
+        }
+        specificHeadersValidation(headers);
+        result.request.setHeaders(headers);
+        result.request.setBody(scanner.getRemaining());
+        result.status = RequestParseResult::COMPLETE;
     }
-
-    specificHeadersValidation(result);
+    catch (const RequestParseError& error)
+    {
+        result.status = RequestParseResult::ERROR;
+        result.request.setErrorCode(error.getErrorCode());
+        result.message = error.what();
+    }
     return result;
 }
 
-Request validateRequest(const std::string& raw) {
-    Request     req;
-    ReqScanner  scanner(raw);
-    Request::setActiveRequest(&req);
-    Request::setActiveError(0);
-    try {
-        std::string controlBlock = extractAndValidate(scanner, requestItems[0]);
-        req.setControlData(validateControlData(controlBlock));
-
-        std::string headers = extractAndValidate(scanner, requestItems[1]);
-        headers += END_OF_LINE;
-        req.setHeaders(validateHeaders(headers));
-
-        std::string bodyBlock = extractAndValidate(scanner, requestItems[2]);
-        req.setBody(bodyBlock);
-    }
-	catch (const std::runtime_error& e) {
-		std::cerr << "Error: " << e.what() << std::endl;
-		return req;
-	}
-
-    return req;
+Request validateRequest(const std::string& raw)
+{
+    return parseRequest(raw, true).request;
 }
