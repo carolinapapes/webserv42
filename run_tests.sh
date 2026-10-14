@@ -1,29 +1,46 @@
 #!/bin/zsh
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#   run_tests.sh                                        :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#   By: capapes <capapes@student.42.fr>             +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#   Created: 2026/10/14 22:43:50 by capapes            #+#    #+#              #
+#   Updated: 2026/10/14 22:43:50 by capapes           ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
 
-tests=($(find test -name "*.test.run" ))
 
-pids=()
-i=1
-for test in $tests ; do
-	(
-		if $test ; then
-			echo "\033[32mSuccess\033[0m" at $test ; exit 0
-		else  
-			echo "\033[31mFailed\033[0m" at $test ; exit 1
-		fi 
-	) &
-	pids[${i}]=$!
-	i=$(echo $i '+' 1)
-done
-errors=0
-for pid in $pids; do
-	wait $pid
-	if [ $? -ne 0 ]; then
-		errors=1
-	fi
-done
-if [ $errors -ne 0 ]; then 
-	echo "caught an error"
+test_dir=${1:-bin/tests}
+if [[ ! -d "$test_dir" ]]; then
+	print -r -- "test directory does not exist: $test_dir"
 	exit 1
 fi
-echo 'done with all the tests'
+
+tests=()
+while IFS= read -r -d '' test; do
+	tests+=("$test")
+done < <(find "$test_dir" -type f -name '*.test.run' -print0 | sort -z)
+
+if (( ${#tests} == 0 )); then
+	print -r -- "no test executables found in $test_dir"
+	exit 1
+fi
+
+# Keep each suite's diagnostics together and continue after a failure.
+failures=0
+for test in "${tests[@]}"; do
+	print -r -- "RUN: $test"
+	"$test"
+	test_status=$?
+	if (( test_status == 0 )); then
+		print -r -- "PASS: $test"
+	else
+		print -r -- "FAIL: $test (exit $test_status)"
+		(( failures += 1 ))
+	fi
+done
+
+print -r -- "${#tests} suites, $failures failed"
+(( failures == 0 ))

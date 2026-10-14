@@ -65,23 +65,61 @@ git clone git@github.com:TahereTaha/webserv42.git
 cd webserv42
 ```
 
+Build the Linux development image (also used by CI):
+
+```bash
+docker build -f Dockerfile.dev -t webserv-dev .
+```
+
+Start a development container from the repository root:
+
+```bash
+docker run --rm -it -v "$(pwd):/app" -w /app -p 8080:8080 webserv-dev
+```
+
+Run the following commands inside the Linux container. The server uses Linux-specific APIs, including epoll.
+
 Build the project:
 
 ```bash
 make
 ```
 
-Run the server with a configuration file:
+Prepare the demo files under `/tmp/http_server` and run the server:
 
 ```bash
-./webserv docs/server.conf
+make demo
 ```
+
+`make run` starts the same demo. Its configuration is `config/demo.conf`;
+its existing listen addresses and runtime paths are preserved. After preparing
+the demo files, you can also invoke `./webserv config/demo.conf` directly.
+
+The unchanged demo currently reports `bind: Address family not supported by
+protocol` in the Linux development image with its `localhost` listen addresses.
+This also occurs before the migration. See the layout notes for validation
+using a temporary IPv4 configuration.
 
 Run the test target:
 
 ```bash
 make test
 ```
+
+Test sources and fixtures live under `tests/`. Generated test objects and
+executables live under `bin/tests/`. Ten C++ suites cover schemes, URI references,
+paths, IP bytes, HTTP requests, request scanning, assertion checks, known parser
+bugs, keyword helpers, and listening sockets. `make test` also checks the test
+runner's exit codes using Python's standard library.
+
+For issue #2, the known-bug suite asserts the desired parser results and currently
+fails on eleven reproductions (thirteen assertions). It is included in
+`make test`, so the full target returns nonzero until those parser bugs are fixed.
+The existing valid scenarios and other suites pass. Run `make test-http` for the
+HTTP suites, `make test-http-regressions` for the known bugs alone, or
+`make test-framework` to verify assertion and runner failure handling.
+See [HTTP test documentation](docs/testing_http.md) for coverage, commands, and
+the expected and observed results of each known failure.
 
 Clean object files:
 
@@ -107,19 +145,41 @@ make re
 
 ```text
 .
-├── docs/                  # Example configuration files and documentation
-├── inc/                   # Header files
-├── src/                   # Server source code
-│   ├── Server/            # Server and response handling
-│   ├── URI_parsing/       # URI parsing logic
-│   ├── configuration_parser/
-│   ├── connection_manager/
-│   ├── exceptions/
-│   └── http_request_parser/
-├── test/                  # Test files and test configuration
+├── .github/workflows/     # CI using the Linux development image
+├── config/               # Demo server configuration
+├── docs/                 # Reference documentation and development notes
+├── examples/
+│   ├── complete_example/ # Demo assets and CGI scripts
+│   └── parser_prototype/ # HTTP ABNF grammar reference
+├── include/webserv/      # Shared headers and configuration types
+├── src/
+│   ├── main.cpp
+│   ├── args.cpp          # Argument handling, with its header alongside
+│   ├── common/
+│   │   ├── containers/
+│   │   └── errors/
+│   ├── config/           # Configuration parser, lexer, and symbols
+│   ├── http/
+│   │   ├── request/
+│   │   ├── response/
+│   │   └── uri/
+│   ├── network/          # Sockets, epoll, and existing CGI execution
+│   └── server/           # Server selection and routing
+├── tests/
+│   ├── unit/
+│   ├── integration/      # Reserved for future integration tests
+│   ├── fixtures/         # Preserved malformed configuration examples
+│   └── support/
+├── Dockerfile.dev
 ├── Makefile
-└── setup.sh
+└── run_tests.sh
 ```
+
+Module-specific headers stay alongside their implementations. Shared headers
+are included as `<webserv/...>`. C++ filenames use lowercase snake_case, with
+`.cpp` sources, `.hpp` headers, and `.tpp` template implementations. Class and
+function names are unchanged. See [repository layout notes](docs/repository_layout.md)
+for preserved legacy files and validation details.
 
 ---
 

@@ -14,34 +14,34 @@ ROOT_DIR	=	./
 
 BIN_DIR		=	bin/
 SRC_DIR		=	src/
-INC_DIR		=	inc/
-TEST_DIR	=	test/
-TEST_BIN_DIR	=	test/bin/
+INC_DIR		=	include/
+TEST_DIR	=	tests/
+TEST_BIN_DIR	=	$(BIN_DIR)tests/
 
 RM		=	rm -rf
 CXX		=	g++
 
 VPATH	= $(ROOT_DIR):
 VPATH	+= $(SRC_DIR):
-VPATH	+= $(SRC_DIR)containers:
-VPATH	+= $(SRC_DIR)containers/tree:
-VPATH	+= $(SRC_DIR)configuration_parser:
-VPATH	+= $(SRC_DIR)configuration_parser/lexer:
-VPATH	+= $(SRC_DIR)configuration_parser/parser:
-VPATH	+= $(SRC_DIR)configuration_parser/parser/rules:
-VPATH	+= $(SRC_DIR)configuration_parser/symbol:
-VPATH	+= $(SRC_DIR)configuration_parser/symbol/non_terminal:
-VPATH	+= $(SRC_DIR)configuration_parser/symbol/non_terminal/server_body_subtrees:
-VPATH	+= $(SRC_DIR)configuration_parser/symbol/terminal:
-VPATH	+= $(SRC_DIR)configuration_parser/symbol/terminal/character_lexeme:
-VPATH	+= $(SRC_DIR)configuration_parser/symbol/terminal/keywords:
-VPATH	+= $(SRC_DIR)configuration_parser/symbol/terminal/literals:
-VPATH	+= $(SRC_DIR)exceptions:
-VPATH	+= $(SRC_DIR)URI_parsing:
-VPATH	+= $(SRC_DIR)URI_parsing/utils:
-VPATH	+= $(SRC_DIR)connection_manager:
-VPATH	+= $(SRC_DIR)http_request_parser:
-VPATH	+= $(SRC_DIR)Server
+VPATH	+= $(SRC_DIR)common/containers:
+VPATH	+= $(SRC_DIR)common/containers/tree:
+VPATH	+= $(SRC_DIR)config:
+VPATH	+= $(SRC_DIR)config/lexer:
+VPATH	+= $(SRC_DIR)config/parser:
+VPATH	+= $(SRC_DIR)config/parser/rules:
+VPATH	+= $(SRC_DIR)config/symbols:
+VPATH	+= $(SRC_DIR)config/symbols/non_terminal:
+VPATH	+= $(SRC_DIR)config/symbols/terminal:
+VPATH	+= $(SRC_DIR)config/symbols/terminal/character_lexeme:
+VPATH	+= $(SRC_DIR)config/symbols/terminal/keywords:
+VPATH	+= $(SRC_DIR)config/symbols/terminal/literals:
+VPATH	+= $(SRC_DIR)common/errors:
+VPATH	+= $(SRC_DIR)http/uri:
+VPATH	+= $(SRC_DIR)http/uri/utils:
+VPATH	+= $(SRC_DIR)network:
+VPATH	+= $(SRC_DIR)http/request:
+VPATH	+= $(SRC_DIR)http/response:
+VPATH	+= $(SRC_DIR)server
 
 CXXFLAGS	:=	-Wall -Wextra -Werror -std=c++98 -MMD -g
 
@@ -59,100 +59,100 @@ NAME	=	webserv
 
 OBJ		:=	main.o						\
 										\
-			Args.o						\
-			IR_printing_functions.o		\
-			ConfigurationParser.o		\
+			args.o						\
+			ir_printing_functions.o		\
+			configuration_parser.o		\
 										\
 			parse_exception.o			\
 			multy_parse_exception.o		\
 										\
-			ASymbol.o					\
-			ATerminal.o					\
-			ANonTerminal.o				\
-			AEvaluable.o				\
+			a_symbol.o					\
+			a_terminal.o					\
+			a_non_terminal.o				\
+			a_evaluable.o				\
 										\
-			ALexer.o					\
-			ConfigFileLexer.o			\
+			a_lexer.o					\
+			config_file_lexer.o			\
 										\
-			ATerminalFactory.o			\
-			ConfigFileTerminalFactory.o	\
+			a_terminal_factory.o			\
+			config_file_terminal_factory.o	\
 										\
-			Number.o					\
-			TextConfigFile.o			\
-			WhiteSpace.o				\
+			number.o					\
+			text_config_file.o			\
+			white_space.o				\
 										\
-			AKeyWord.o					\
-			KeyWordServer.o				\
-			KeyWordServerName.o			\
-			KeyWordListen.o				\
-			KeyWordClientMaxBodySize.o	\
-			KeyWordErrorPage.o			\
-			KeyWordLocation.o			\
-			KeyWordReturn.o				\
-			KeyWordLimitExept.o			\
-			KeyWordRoot.o				\
-			KeyWordAutoIndex.o			\
-			KeyWordIndex.o				\
-			KeySemicolon.o				\
-			KeyLeftCurlyBracket.o		\
-			KeyRightCurlyBracket.o		\
+			a_key_word.o					\
+			key_word_server.o				\
+			key_word_server_name.o			\
+			key_word_listen.o				\
+			key_word_client_max_body_size.o	\
+			key_word_error_page.o			\
+			key_word_location.o			\
+			key_word_return.o				\
+			key_word_limit_exept.o			\
+			key_word_root.o				\
+			key_word_auto_index.o			\
+			key_word_index.o				\
+			key_semicolon.o				\
+			key_left_curly_bracket.o		\
+			key_right_curly_bracket.o		\
 										\
-			AParser.o					\
-			AParsingRule.o				\
-			ParsingRuleSymbol.o			\
-			ParsingRuleAnd.o			\
-			ParsingRuleOr.o				\
-			ParsingRuleRepetition.o		\
+			a_parser.o					\
+			a_parsing_rule.o				\
+			parsing_rule_symbol.o			\
+			parsing_rule_and.o			\
+			parsing_rule_or.o				\
+			parsing_rule_repetition.o		\
 										\
-			SymbolConfigContext.o		\
-			SymbolServer.o				\
-			SymbolServerName.o			\
-			SymbolListen.o				\
-			SymbolClientMaxBodySize.o	\
-			SymbolErrorPage.o			\
-			SymbolLocation.o			\
-			SymbolLimitExcept.o			\
-			SymbolReturn.o				\
-			SymbolRoot.o				\
-			SymbolAutoIndex.o			\
-			SymbolIndex.o				\
+			symbol_config_context.o		\
+			symbol_server.o				\
+			symbol_server_name.o			\
+			symbol_listen.o				\
+			symbol_client_max_body_size.o	\
+			symbol_error_page.o			\
+			symbol_location.o			\
+			symbol_limit_except.o			\
+			symbol_return.o				\
+			symbol_root.o				\
+			symbol_auto_index.o			\
+			symbol_index.o				\
 										\
 			tokenize.o					\
 			percent_encoding_utils.o	\
 			utils.o						\
 										\
-			Scheme.o					\
-			UserInfo.o					\
-			IpLiteral.o					\
-			Host.o						\
-			Authority.o					\
-			Path.o						\
-			Query.o						\
-			Fragment.o					\
-			URI.o						\
+			scheme.o					\
+			user_info.o					\
+			ip_literal.o					\
+			host.o						\
+			authority.o					\
+			path.o						\
+			query.o						\
+			fragment.o					\
+			uri.o						\
 										\
-			EpollConnectionManager.o	\
-			Log.o						\
-			Socket.o					\
-			setUpSockets.o				\
+			epoll_connection_manager.o	\
+			socket.o					\
+			set_up_sockets.o				\
 										\
-			ControlData.o				\
-			FieldValidators.o			\
-			Headers.o					\
-			ReqScanner.o				\
-			Request.o					\
-			Schemas.o					\
+			field_validators.o			\
+			headers.o					\
+			req_scanner.o				\
+			request.o					\
+			schemas.o					\
 										\
-			Server.o					\
-			ServerManager.o				\
-			ServerResponse.o			\
+			server.o					\
+			server_manager.o				\
+			server_response.o			\
 
 
-TESTS_SRCS	:=	$(notdir $(shell find . -name "*.test.cpp"))
+TESTS_SRCS	:=	$(shell find $(TEST_DIR)unit -name "*.test.cpp" | sort)
 
-TESTS_OBJ	:=	$(patsubst %.cpp, $(TEST_BIN_DIR)%.o,$(TESTS_SRCS))
+TESTS_OBJ	:=	$(patsubst $(TEST_DIR)unit/%.cpp, $(TEST_BIN_DIR)%.o,$(TESTS_SRCS))
 
-TESTS		:=	$(patsubst %.cpp, $(TEST_DIR)%.run,$(TESTS_SRCS))
+TESTS		:=	$(patsubst $(TEST_DIR)unit/%.cpp, $(TEST_BIN_DIR)%.run,$(TESTS_SRCS))
+
+HTTP_TESTS	:=	$(filter $(TEST_BIN_DIR)http/request/%,$(TESTS))
 
 OBJ		:=	$(addprefix $(BIN_DIR), $(OBJ))
 
@@ -161,57 +161,54 @@ DEP		:=	$(OBJ:.o=.d) $(TESTS_OBJ:.o=.d)
 all	:	$(BIN_DIR) $(NAME)
 
 $(BIN_DIR)		:
-	mkdir $(BIN_DIR)
+	mkdir -p $(BIN_DIR)
 
 $(NAME) : $(OBJ) Makefile
 	$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)
 
-$(BIN_DIR)%.o : %.cpp	Makefile 
+$(BIN_DIR)%.o : %.cpp	Makefile | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(TEST_BIN_DIR)%.o : %.cpp	Makefile 
+$(TEST_BIN_DIR)%.o : $(TEST_DIR)unit/%.cpp	Makefile
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(TEST_DIR)%.run: $(TEST_BIN_DIR)%.o $(OBJ) Makefile
-	$(CXX) $(CXXFLAGS) $< $(filter-out bin/main.o,$(OBJ)) -o $@
+$(TEST_BIN_DIR)%.run: $(TEST_BIN_DIR)%.o $(filter-out $(BIN_DIR)main.o,$(OBJ)) Makefile
+	$(CXX) $(CXXFLAGS) $< $(filter-out $(BIN_DIR)main.o,$(OBJ)) -o $@
 
 clean :
-	echo $(CINC)
 	$(RM) $(BIN_DIR)
-	$(RM) $(TEST_BIN_DIR)
 
 fclean : clean
 	$(RM) $(NAME)
-	$(RM) $(TEST_DIR)
 
 re : fclean all
 
-demo:
+demo: all
 	rm -rf /tmp/http_server
-	cp -r ./demos/complet_example/http_server /tmp/http_server/
-	./webserv ./demos/complet_example/parser_rules_test_7.conf
+	cp -r ./examples/complete_example/http_server /tmp/http_server/
+	./webserv ./config/demo.conf
 	
 
-test : all build_test
-	@echo //
-	@echo //	runing all the tests
-	@echo //
-	zsh run_tests.sh
+test : all build_test test-framework
+	zsh run_tests.sh $(TEST_BIN_DIR)
 
-build_test: $(TEST_DIR) $(TEST_BIN_DIR) $(TESTS)
+test-http: $(HTTP_TESTS) test-framework
+	zsh run_tests.sh $(TEST_BIN_DIR)http/request/
 
+test-http-regressions: $(TEST_BIN_DIR)http/request/known_bugs.test.run
+	./$(TEST_BIN_DIR)http/request/known_bugs.test.run
 
-$(TEST_DIR):
-	mkdir -p $(TEST_DIR)
+test-framework: $(TEST_BIN_DIR)http/request/assertions.test.run
+	python3 $(TEST_DIR)test_runner.py
 
-$(TEST_BIN_DIR):
-	mkdir -p $(TEST_BIN_DIR)
+build_test: $(TESTS)
 
-run : all
-	bash setup.sh
-	./webserv test/parser_rules_test_7.conf
+run: demo
 
 
 -include $(DEP)
 
-.PHONY:	all clean fclean re test debug test_debug
+.SECONDARY: $(TESTS_OBJ)
+
+.PHONY:	all clean fclean re demo test build_test run test-http test-http-regressions test-framework
