@@ -54,6 +54,16 @@ const ErrorDefinition errors[] = {
     { RequestParseError::INVALID_HOST, 400, "Invalid or duplicate Host header" },
     { RequestParseError::AMBIGUOUS_FRAMING, 400, "Ambiguous Transfer-Encoding and Content-Length" },
     { RequestParseError::INVALID_CONTENT_LENGTH, 400, "Invalid or conflicting Content-Length" },
+    { RequestParseError::UNEXPECTED_END_OF_BODY, 400, "Unexpected end of request body" },
+    { RequestParseError::INVALID_CHUNK_SIZE, 400, "Invalid chunk size" },
+    { RequestParseError::INVALID_CHUNK_EXTENSION, 400, "Invalid chunk extension" },
+    { RequestParseError::INVALID_CHUNK_DELIMITER, 400, "Invalid chunk data delimiter" },
+    { RequestParseError::FORBIDDEN_TRAILER, 400, "Forbidden request trailer field" },
+    { RequestParseError::REQUEST_LINE_TOO_LONG, 414, "Request line exceeds configured limit" },
+    { RequestParseError::HEADERS_TOO_LARGE, 431, "Request fields exceed configured limit" },
+    { RequestParseError::BODY_TOO_LARGE, 413, "Request body exceeds configured limit" },
+    { RequestParseError::BUFFER_LIMIT_EXCEEDED, 413, "Pending input exceeds configured limit" },
+    { RequestParseError::CHUNK_METADATA_TOO_LARGE, 413, "Chunk metadata exceeds configured limit" },
 };
 
 typedef char ErrorTableCoversEveryId[

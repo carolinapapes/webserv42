@@ -15,7 +15,8 @@
 
 static void expectParse(TestSuite& suite, const std::string& name,
                          const std::string& line, const std::string& fields,
-                         int errorCode, const std::string& body = "")
+                         int errorCode, const std::string& body = "",
+                         const std::string& decodedBody = "")
 {
     const RequestParseResult result = parseRequest(line + "\r\n" + fields + "\r\n" + body, true);
     suite.checkEqual(result.getErrorCode(), errorCode, name + " HTTP error");
@@ -23,7 +24,7 @@ static void expectParse(TestSuite& suite, const std::string& name,
                      name + " outcome");
     suite.checkEqual(result.message.empty(), errorCode == 0, name + " diagnostic");
     if (errorCode == 0)
-        suite.checkEqual(result.request.getBody(), body, name + " body remains unchanged");
+        suite.checkEqual(result.request.getBody(), decodedBody, name + " decoded body");
 }
 
 // =====================================================================

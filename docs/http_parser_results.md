@@ -16,9 +16,9 @@ The returned value owns a Request and a diagnostic string. `status` is one of:
 
 | Status | Meaning | HTTP error code |
 | --- | --- | --- |
-| `RequestParseResult::COMPLETE` | The request line and headers passed the current validators; available body bytes were copied | 0 |
-| `RequestParseResult::INCOMPLETE` | More bytes are needed to finish the request line or headers | 0 |
-| `RequestParseResult::ERROR` | Syntax or validation failed, or final input ended before headers were complete | `getErrorCode()` |
+| `RequestParseResult::COMPLETE` | One complete framed request has been parsed, including its decoded body | 0 |
+| `RequestParseResult::INCOMPLETE` | More bytes are needed for the request line, headers, body, or trailers | 0 |
+| `RequestParseResult::ERROR` | Syntax, validation, or a configured limit failed, or final input was truncated | `getErrorCode()` |
 
 `message` contains the reason for ERROR and is empty otherwise. The same code
 is stored in `request.getErrorCode()` for compatibility with the Request model.
@@ -46,6 +46,8 @@ and retry with the entire accumulated buffer. Separate calls and returned
 results share no mutable Request state. They can be interleaved, copied, or
 destroyed independently, and results remain valid after their input string is
 changed or destroyed.
+For fragmented streams, issue #5's [RequestParser](http_request_framing.md)
+retains state and queued bytes without reparsing the entire buffer.
 
 An unfinished CRLF is INCOMPLETE unless `endOfInput` is true. A bare LF or a CR
 followed by another character is already invalid and reports 400. Missing
@@ -61,12 +63,11 @@ epoll, CGI, or routing code is changed in issue #3.
 
 ## Scope of completion
 
-COMPLETE currently describes request-line/header parsing. Body bytes remain the
-entire input remainder, matching the previous parser. It does not yet guarantee
-that Content-Length bytes have arrived, decode chunked bodies, split pipelined
-requests, or retain unconsumed input. Those are issue #5 responsibilities.
-The feed API and its connection-manager integration contract follow in issues
-#5 and #6; this entry point does not replace that work.
+Issue #5 changes COMPLETE to require the entire framed body and, for chunked
+messages, the terminating chunk and trailer section. Content-Length defines an
+exact boundary; chunked bodies are decoded. The whole-buffer wrapper returns
+only the first request. Use RequestParser to retain fragmented state and
+pipelined input. Its connection-manager contract is finalized in issue #6.
 
 ## Scanner extraction
 

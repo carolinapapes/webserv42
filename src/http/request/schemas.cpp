@@ -13,6 +13,8 @@
 #include "field_validators.hpp"
 #include "schemas.hpp"
 #include "req_scanner.hpp"
+#include "request_parser.hpp"
+#include "request_syntax.hpp"
 
 namespace
 {
@@ -57,27 +59,6 @@ std::string validateField(const std::string& raw, const SchemaItem& item)
     return value;
 }
 
-bool readLine(ReqScanner& scanner, std::string& line, bool endOfInput)
-{
-    if (scanner.getField(END_OF_LINE, line))
-    {
-        if (line.find_first_of("\r\n") != std::string::npos)
-            throw RequestParseError(RequestParseError::INVALID_LINE_ENDING);
-        return true;
-    }
-
-    // A final CR can be the start of a fragmented CRLF. Other embedded line
-    // endings cannot become valid by appending more input.
-    const std::string remaining = scanner.getRemaining();
-    const size_t carriageReturn = remaining.find('\r');
-    if (remaining.find('\n') != std::string::npos
-        || (carriageReturn != std::string::npos && carriageReturn + 1 != remaining.size()))
-        throw RequestParseError(RequestParseError::INVALID_LINE_ENDING);
-    if (endOfInput)
-        throw RequestParseError(RequestParseError::UNEXPECTED_END_OF_HEADERS);
-    return false;
-}
-
 // =====================================================================
 // 	SCHEMAS
 // =====================================================================
@@ -100,6 +81,10 @@ static const SchemaItem headersItems[] = {
 //          |-> HeadersFields [Iterator] -> HeadersItems
 //          |-> Body
 // =====================================================================
+}
+
+namespace RequestSyntax
+{
 ControlData validateControlData(const std::string& raw)
 {
     ReqScanner scanner(raw);
@@ -122,7 +107,7 @@ ControlData validateControlData(const std::string& raw)
 
 void validateHeader(const std::string& line, Headers& headers)
 {
-    if (line[0] == ' ' || line[0] == '\t')
+    if (!line.empty() && (line[0] == ' ' || line[0] == '\t'))
         throw RequestParseError(RequestParseError::OBSOLETE_HEADER_FOLDING);
     ReqScanner scanner(line);
     std::string key;
@@ -139,36 +124,9 @@ void validateHeader(const std::string& line, Headers& headers)
 // =====================================================================
 RequestParseResult parseRequest(const std::string& raw, bool endOfInput)
 {
-    RequestParseResult result;
-    ReqScanner scanner(raw);
-    try
-    {
-        std::string line;
-        if (!readLine(scanner, line, endOfInput))
-            return result;
-        result.request.setControlData(validateControlData(line));
-
-        Headers headers;
-        while (true)
-        {
-            if (!readLine(scanner, line, endOfInput))
-                return result;
-            if (line.empty())
-                break;
-            validateHeader(line, headers);
-        }
-        specificHeadersValidation(headers);
-        result.request.setHeaders(headers);
-        result.request.setBody(scanner.getRemaining());
-        result.status = RequestParseResult::COMPLETE;
-    }
-    catch (const RequestParseError& error)
-    {
-        result.status = RequestParseResult::ERROR;
-        result.request.setErrorCode(error.getErrorCode());
-        result.message = error.what();
-    }
-    return result;
+    RequestParser parser;
+    parser.feed(raw, endOfInput);
+    return parser.result();
 }
 
 Request validateRequest(const std::string& raw)
