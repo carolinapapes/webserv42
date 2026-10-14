@@ -11,10 +11,9 @@
 /* ************************************************************************** */
 
 // Request scanner
-// Its a utility that works as extractor.
-// It receives a string and extracts fields based on delimiters.
-// It mantains the current position in the string to allow sequential extraction.
-// Flags trim start, trim end, return the strinf with the delimiter included;
+// Owns its input and extracts fields sequentially.
+// Missing delimiters leave the position unchanged and return false.
+// An extracted field may be empty; getRemaining() explicitly consumes the rest.
 
 #pragma once
 #include <string>
@@ -25,12 +24,11 @@ public:
 	ReqScanner(const std::string& raw);
 	~ReqScanner();
 
-	std::string getField(const std::string& delimiter);
-	size_t 		getEndPos(const std::string& delimiter);
-	bool		isEndPos();
+	bool		getField(const std::string& delimiter, std::string& field);
+	std::string getRemaining();
+	bool		isEndPos() const;
 
 private:
 	std::string 	_raw;
 	size_t 			_pos;
-	size_t 			_size;
 };

@@ -11,9 +11,6 @@
 /* ************************************************************************** */
 
 #include "request.hpp"
-#include <stdio.h>
-#include <iostream>
-#include "control_data.hpp"
 
 Request::Request()
     : controlData(), headers(), body(""), errorCode(0) {
@@ -22,8 +19,6 @@ Request::Request()
 
 Request::Request(const ControlData& cd, const Headers& h, const std::string& b)
     : controlData(cd), headers(h), body(b), errorCode(0) {
-            Request::setActiveRequest(this);
-            Request::setActiveError(0);
     }
 
 Request::Request(const Request& other)
@@ -76,15 +71,4 @@ const std::string& Request::getBody() const {
 
 int Request::getErrorCode() const {
     return errorCode;
-}
-
-Request* Request::activeRequest = NULL;
-
-void Request::setActiveRequest(Request* r) {
-	activeRequest = r;
-}
-
-void Request::setActiveError(int code) {
-	if (activeRequest)
-		activeRequest->setErrorCode(code);
 }

@@ -3,7 +3,8 @@
 Issue [#2](https://github.com/carolinapapes/webserv42/issues/2) establishes tests
 before changing the parser. The old `Test` and `UnitTestRunner` files were moved
 and consolidated during issue #1; the current tests live in
-`tests/unit/http/request/`. Production sources are unchanged by this work.
+`tests/unit/http/request/`. Issue #3 builds on these tests with safe extraction
+and [explicit parsing results](http_parser_results.md).
 
 ## Running in Linux
 
@@ -30,9 +31,9 @@ suite directory, paths containing spaces, signal termination, and continued
 execution after a failed suite. It uses only Python's standard library, zsh, and
 the compiled C++ assertion test. It should pass.
 
-`make test-http` builds and runs all four request suites, including known bugs.
+`make test-http` builds and runs all five request suites, including known bugs.
 `make test-http-regressions` runs only the known-bug suite. `make test` runs all
-ten C++ suites and the runner self-tests. These three targets currently return
+eleven C++ suites and the runner self-tests. These three targets currently return
 nonzero because known parser bugs are asserted as failures. A test executable
 returns 1 on a failed assertion; the shell runner returns 1 if any suite fails;
 GNU Make returns 2 when a recipe fails. Do not interpret parser error messages
@@ -43,6 +44,7 @@ To run the passing request/scanner suites after building:
 ```sh
 ./bin/tests/http/request/request.test.run
 ./bin/tests/http/request/req_scanner.test.run
+./bin/tests/http/request/parse_result.test.run
 ```
 
 ## Coverage and fixture expectations
@@ -73,18 +75,18 @@ launch those deliberate failures as subprocesses and require exit code 1.
 ## Confirmed parser failures
 
 `known_bugs.test.cpp` contains desired assertions, without skipped tests or
-expected-failure conversion. On the current parser, these eleven reproductions
-produce thirteen failing assertions:
+expected-failure conversion. Issue #3 fixes the missing-Host error-propagation
+case. The other ten reproductions still produce thirteen failing assertions:
 
 | Reproduction | Expected | Current result |
 | --- | --- | --- |
-| No Host, with User-Agent present | 400 | 0; headers discarded |
+| No Host, with User-Agent present | 400 | 400; fixed in issue #3 |
 | Two Host fields | 400 | 0; last field overwrites first |
 | Content-Length fields of 3 and 4 | 400 | 0; last value wins |
 | `cOnTeNt-LeNgTh: nope` | 400 | 0; validation bypassed |
 | `/search?q=%GG` | 400 | 0; query escape not validated |
 | `GET / HTTP/1.1 extra` | 400 | 505 |
-| Lowercase `host` | Successful parse with header retained | 0, but no headers |
+| Lowercase `host` | Successful parse with header retained | 400; name lookup still case-sensitive |
 | Empty optional `X-Empty:` | Successful parse with header retained | 400 |
 | Valid field name `X!Trace` | Successful parse with header retained | 400 |
 | Numeric validator: `2147483648` | false under its existing INT_MAX bound | true |
@@ -105,11 +107,12 @@ validator; INT_MAX is not an HTTP protocol limit. They call the validator direct
 to avoid representing a huge Content-Length as an otherwise valid request with
 an inconsistent body.
 
-These failures belong to later parser work. This issue does not change HTTP
-framing, epoll, CGI, or routing. Full server/CGI integration and an exhaustive HTTP
-conformance suite are not part of these unit tests.
+These remaining failures belong to later parser work. Issues #2 and #3 do not
+implement HTTP body framing or change epoll, CGI, or routing. Full server/CGI
+integration and an exhaustive HTTP conformance suite are not part of these unit
+tests.
 
-## Docker validation for issue #2
+## Baseline Docker validation for issue #2
 
 Validated in the Ubuntu 24.04 development image with
 `-Wall -Wextra -Werror -std=c++98`, AddressSanitizer, and
@@ -128,5 +131,7 @@ Validated in the Ubuntu 24.04 development image with
 
 There were no AddressSanitizer or LeakSanitizer diagnostics. No required unit
 checks were blocked. Full server, epoll, and CGI integration tests were not run
-for this test-framework issue. CI runs `make test`, so it will also report the
-known parser regressions as failures until later parser work resolves them.
+for this test-framework issue. These counts record the issue #2 baseline; see
+the [issue #3 API notes](http_parser_results.md) for its validation results.
+CI runs `make test` and will report the remaining parser regressions as failures
+until later parser work resolves them.
